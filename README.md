@@ -1,9 +1,14 @@
-# *Cuprum*
+# *Cuprum*: E-Waste Collection Portal
 
-E-waste to copper, in the browser. Hold a gadget up to the camera: an on-device image model
-(MobileCLIP-S2 on GPU, MobileCLIP-S0 on the CPU fallback) identifies it, ignoring your face and hands; the page estimates the metals inside from published compositions,
-and a bioleaching simulator shows microbes dissolving the copper. Built for an Environmental
-Biotechnology project; every output is an educational estimate.
+Book a free doorstep pickup for old electronics. Residents create an account, request a pickup
+(with their current location), and track or cancel it from their profile.
+
+Web Technology (23CS2048) IA3 skill-based project, John Chrispin Durai A (URK24CS1060).
+
+The landing page also has an AI scanner: hold a gadget up to the camera and an on-device image
+model (MobileCLIP-S2 on GPU, MobileCLIP-S0 on the CPU fallback) identifies it, estimates the
+metals inside, and a bioleaching simulator shows microbes recovering the copper. Every output
+there is an educational estimate.
 
 ## Collection portal
 
