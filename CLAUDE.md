@@ -32,9 +32,8 @@ Admins: `node --env-file=.env scripts/make-admin.mjs <email> <password> "Name"`.
 
 ## Accounts in the database
 
-- Admin: `johnchrispin@karunya.edu.in` (password given by the user).
-- Demo customer used for the report screenshots: `john.chrispin@karunya.edu.in` / `Ewaste2026`.
-- `cleochariaofficial@gmail.com` ("LilyFernandez") is the owner's own test account. Leave it alone unless asked.
+Logins are in `private/ACCOUNTS.md` (git-ignored). In short: one admin (John), one demo customer used for the report
+screenshots, and the owner's own test account ("LilyFernandez"), which stays untouched unless asked.
 
 ## Deployment
 
