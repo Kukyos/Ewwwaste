@@ -1,7 +1,5 @@
-// E-waste collection portal: form validation, geolocation, and saving requests in localStorage.
-// ponytail: requests live in this browser only; a real portal would POST them to a server.
+// Pickup booking page: validation, geolocation, and sending the request to the backend.
 
-const KEY = 'cuprum-pickups';
 const form = document.getElementById('pickup-form');
 const msg = document.getElementById('form-msg');
 const list = document.getElementById('request-list');
@@ -9,14 +7,7 @@ const empty = document.getElementById('empty');
 const locateBtn = document.getElementById('locate-btn');
 const locateStatus = document.getElementById('locate-status');
 const map = document.getElementById('map');
-
-// ---------- Storage ----------
-function load() {
-  try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch { return []; }
-}
-function save(requests) {
-  try { localStorage.setItem(KEY, JSON.stringify(requests)); return true; } catch { return false; }
-}
+const itemBoxes = [...form.querySelectorAll('input[name="items"]')];
 
 // ---------- Date: earliest pickup is tomorrow, latest 30 days out ----------
 // Built from local date parts, not toISOString(), which is UTC and can be a day off.
@@ -30,10 +21,17 @@ dateInput.min = dateInput.value = ymd(day);
 day.setDate(day.getDate() + 29);
 dateInput.max = ymd(day);
 
-// ---------- Prefill an item from the scanner: pickup.html?item=battery ----------
+// ---------- Prefill from the scanner (pickup.html?item=battery) and from the profile ----------
 const preset = new URLSearchParams(location.search).get('item');
-const presetBox = preset && form.querySelector(`input[name="items"][value="${CSS.escape(preset)}"]`);
+const presetBox = itemBoxes.find((b) => b.value === preset);
 if (presetBox) presetBox.checked = true;
+
+api('profile').then(({ user }) => {
+  const f = form.elements;
+  if (!f.phone.value) f.phone.value = user.phone || '';
+  if (!f.address.value) f.address.value = user.address || '';
+  if (!f.pincode.value) f.pincode.value = user.pincode || '';
+}).catch(() => {});
 
 // ---------- Location ----------
 function showMap(lat, lon) {
@@ -65,6 +63,7 @@ locateBtn.addEventListener('click', () => {
       if (!res.ok) throw new Error(res.status);
       const data = await res.json();
       if (data.display_name) form.elements.address.value = data.display_name;
+      if (data.address && /^\d{6}$/.test(data.address.postcode || '')) form.elements.pincode.value = data.address.postcode;
       locateStatus.textContent = 'Address filled in. Check it and add your house number.';
     } catch {
       locateStatus.textContent = 'Got your location, but not the street address. Please type it in.';
@@ -83,111 +82,47 @@ locateBtn.addEventListener('click', () => {
 });
 
 // ---------- Submit ----------
-const itemsError = document.getElementById('items-error');
-const itemBoxes = [...form.querySelectorAll('input[name="items"]')];
-itemBoxes.forEach((b) => b.addEventListener('change', () => { itemsError.hidden = true; }));
-
-form.addEventListener('submit', (e) => {
+form.addEventListener('submit', async (e) => {
   e.preventDefault();
-  form.classList.add('tried');
-  const items = itemBoxes.filter((b) => b.checked).map((b) => b.parentElement.textContent.trim());
-  itemsError.hidden = items.length > 0;
+  const f = form.elements;
+  const items = itemBoxes.filter((b) => b.checked).map((b) => b.value);
 
-  if (!form.checkValidity() || !items.length) {
+  const errors = checkFields(form, ['address', 'pincode', 'phone']);
+  if (!items.length) errors.items = 'Pick at least one item.';
+  if (!f.date.value || f.date.value < dateInput.min || f.date.value > dateInput.max) {
+    errors.date = 'Pick a date between tomorrow and 30 days from now.';
+  }
+  if (!f.wiped.checked) errors.wiped = 'Please confirm your data is wiped.';
+  showFieldErrors(form, errors);
+  if (Object.keys(errors).length) {
     msg.textContent = 'Please fix the highlighted fields.';
     msg.className = 'form-msg bad';
-    (form.querySelector(':invalid:not(fieldset)') || itemBoxes[0]).focus();
     return;
   }
 
-  const f = form.elements;
-  const request = {
-    id: 'EW-' + Date.now().toString(36).toUpperCase(),
-    items,
-    size: f.size.value,
-    address: f.address.value.trim(),
-    landmark: f.landmark.value.trim(),
-    lat: f.lat.value || null,
-    lon: f.lon.value || null,
-    date: f.date.value,
-    slot: f.slot.value,
-    name: f.name.value.trim(),
-    phone: f.phone.value.trim(),
-    email: f.email.value.trim(),
-    notes: f.notes.value.trim(),
-    status: 'scheduled',
-    created: new Date().toISOString(),
-  };
-
-  const requests = load();
-  requests.unshift(request);
-  if (!save(requests)) {
-    msg.textContent = 'Could not save the request in this browser (storage is blocked).';
+  const button = form.querySelector('button[type=submit]');
+  button.disabled = true;
+  msg.className = 'form-msg';
+  msg.textContent = 'Booking…';
+  try {
+    const { pickup } = await api('pickups', { method: 'POST', body: {
+      items, size: f.size.value, address: f.address.value.trim(), pincode: f.pincode.value.trim(),
+      landmark: f.landmark.value.trim(), lat: f.lat.value || null, lon: f.lon.value || null,
+      date: f.date.value, slot: f.slot.value, phone: f.phone.value.trim(), notes: f.notes.value.trim(),
+    } });
+    form.reset();
+    dateInput.value = dateInput.min;
+    map.hidden = true;
+    locateStatus.textContent = '';
+    msg.textContent = `Booked! Your request ID is ${pickup.code}. The collector will call ${pickup.phone} before arriving.`;
+    msg.className = 'form-msg ok';
+    renderPickups(list, empty, null, pickup._id);
+  } catch (err) {
+    showFieldErrors(form, err.fields);
+    msg.textContent = err.message;
     msg.className = 'form-msg bad';
-    return;
   }
-
-  form.reset();
-  form.classList.remove('tried');
-  dateInput.value = dateInput.min;
-  map.hidden = true;
-  locateStatus.textContent = '';
-  msg.textContent = `Booked! Your request ID is ${request.id}. The collector will call ${request.phone} before arriving.`;
-  msg.className = 'form-msg ok';
-  render(request.id);
+  button.disabled = false;
 });
 
-// ---------- Request list ----------
-function prettyDate(s) {
-  return new Date(s + 'T00:00').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
-}
-
-function render(flashId) {
-  const requests = load();
-  empty.hidden = requests.length > 0;
-  list.replaceChildren(...requests.map((r) => {
-    const li = document.createElement('li');
-    li.className = r.status === 'cancelled' ? 'is-cancelled' : '';
-    if (r.id === flashId) li.classList.add('flash');
-
-    const head = document.createElement('div');
-    head.className = 'head';
-    const id = document.createElement('span');
-    id.className = 'id';
-    id.textContent = r.id;
-    const status = document.createElement('span');
-    status.className = `status ${r.status}`;
-    status.textContent = r.status;
-    head.append(id, status);
-
-    const when = document.createElement('div');
-    when.textContent = `${prettyDate(r.date)}, ${r.slot}`;
-    const what = document.createElement('div');
-    what.className = 'meta';
-    what.textContent = `${r.items.join(', ')} · ${r.size}`;
-    const where = document.createElement('div');
-    where.className = 'meta';
-    where.textContent = r.address;
-    li.append(head, when, what, where);
-
-    if (r.status === 'scheduled') {
-      const cancel = document.createElement('button');
-      cancel.type = 'button';
-      cancel.className = 'btn small';
-      cancel.textContent = 'Cancel pickup';
-      cancel.style.justifySelf = 'start';
-      cancel.style.marginTop = '6px';
-      cancel.addEventListener('click', () => {
-        const all = load();
-        const target = all.find((x) => x.id === r.id);
-        if (target) target.status = 'cancelled';
-        save(all);
-        render();
-      });
-      li.append(cancel);
-    }
-    return li;
-  }));
-}
-
-render();
+renderPickups(list, empty);

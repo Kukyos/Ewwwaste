@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0e0f11">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="/portal.css">
+  <title>My Profile — Cuprum</title>
+</head>
+<body>
+  <script src="/auth.js"></script>
+  <script>requireLogin();</script>
+  <header class="top">
+    <a href="/" class="wordmark">Cuprum</a>
+    <nav aria-label="Site">
+      <a href="/#scan">Scanner</a>
+      <a href="/pickup.html">Request a pickup</a>
+      <span id="nav-auth"></span>
+    </nav>
+  </header>
+
+  <main>
+    <section class="intro">
+      <p class="eyebrow">My profile</p>
+      <h1 id="hello">Hello.</h1>
+      <p class="lede" id="member-since"></p>
+    </section>
+
+    <dl class="stats">
+      <div><dt>Pickups booked</dt><dd id="stat-total">–</dd></div>
+      <div><dt>Upcoming</dt><dd id="stat-scheduled">–</dd></div>
+      <div><dt>Completed</dt><dd id="stat-completed">–</dd></div>
+    </dl>
+
+    <div class="layout">
+      <section class="card">
+        <div class="head-row">
+          <h2>My pickups</h2>
+          <a class="btn primary" href="/pickup.html">Book a pickup</a>
+        </div>
+        <p class="hint" id="empty" hidden>No pickups yet. <a href="/pickup.html">Book your first one.</a></p>
+        <ul class="requests" id="request-list"><li class="hint">Loading…</li></ul>
+      </section>
+
+      <aside class="side">
+        <form class="card" id="profile-form" novalidate>
+          <h2>My details</h2>
+          <label class="field">
+            <span>Email</span>
+            <input type="email" name="email" disabled>
+          </label>
+          <label class="field">
+            <span>Full name</span>
+            <input type="text" name="name" required>
+            <small class="field-error" id="name-error"></small>
+          </label>
+          <label class="field">
+            <span>Mobile number</span>
+            <input type="tel" name="phone" required>
+            <small class="field-error" id="phone-error"></small>
+          </label>
+          <label class="field">
+            <span>Default pickup address <em>(optional)</em></span>
+            <textarea name="address" rows="3"></textarea>
+            <small class="field-error" id="address-error"></small>
+          </label>
+          <label class="field">
+            <span>PIN code <em>(optional)</em></span>
+            <input type="text" name="pincode" inputmode="numeric" maxlength="6">
+            <small class="field-error" id="pincode-error"></small>
+          </label>
+          <button type="submit" class="btn primary wide">Save changes</button>
+          <p class="form-msg" role="status" aria-live="polite"></p>
+        </form>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="foot">Cuprum e-waste collection portal</footer>
+
+  <script src="/pickups-list.js"></script>
+  <script>
+    const form = document.getElementById('profile-form');
+    const msg = form.querySelector('.form-msg');
+
+    async function loadProfile() {
+      const { user, stats } = await api('profile');
+      document.getElementById('hello').textContent = `Hello, ${user.name.split(' ')[0]}.`;
+      document.getElementById('member-since').textContent =
+        `Member since ${new Date(user.createdAt).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}.`;
+      for (const k of ['total', 'scheduled', 'completed']) document.getElementById(`stat-${k}`).textContent = stats[k];
+      for (const k of ['email', 'name', 'phone', 'address', 'pincode']) form.elements[k].value = user[k] || '';
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errors = checkFields(form, ['name', 'phone', 'address', 'pincode'], ['address', 'pincode']);
+      showFieldErrors(form, errors);
+      if (Object.keys(errors).length) return;
+      const f = form.elements;
+      try {
+        await api('profile', { method: 'PUT', body: {
+          name: f.name.value.trim(), phone: f.phone.value.trim(), address: f.address.value.trim(), pincode: f.pincode.value.trim(),
+        } });
+        msg.className = 'form-msg ok';
+        msg.textContent = 'Saved.';
+        loadProfile();
+      } catch (err) {
+        showFieldErrors(form, err.fields);
+        msg.className = 'form-msg bad';
+        msg.textContent = err.message;
+      }
+    });
+
+    loadProfile().catch((err) => { msg.className = 'form-msg bad'; msg.textContent = err.message; });
+    renderPickups(document.getElementById('request-list'), document.getElementById('empty'), loadProfile);
+  </script>
+</body>
+</html>

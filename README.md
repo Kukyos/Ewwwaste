@@ -7,13 +7,26 @@ Biotechnology project; every output is an educational estimate.
 
 ## Collection portal
 
-`/pickup.html` is the pickup booking page, written in plain HTML, CSS and JavaScript
-(`public/pickup.html`, `pickup.css`, `pickup.js`). It covers:
+A full-stack pickup portal: plain HTML/CSS/JS pages in `public/`, a Node.js API in `api/` (Vercel
+serverless functions), and MongoDB Atlas for storage.
 
-- A form with native validation: required fields, a phone pattern, an email type, and a date picker limited to tomorrow through 30 days out.
-- "Use my current location": the Geolocation API gets the coordinates, OpenStreetMap's Nominatim turns them into an address, and an OSM map is embedded.
-- Requests are saved in `localStorage` with an ID and a status, listed under "My requests", and can be cancelled.
-- `pickup.html?item=battery` pre-ticks an item. The scanner's "Schedule a pickup" button uses this.
+| Page | What |
+| --- | --- |
+| `/login.html` | Sign up / log in. Passwords are hashed with bcrypt; the server returns a JWT kept in `localStorage`. |
+| `/pickup.html` | Book a doorstep pickup: items, address (or "Use my current location" via the Geolocation API + OpenStreetMap), date, time slot. |
+| `/profile.html` | Edit your details, see your pickup stats and history, cancel upcoming pickups. |
+
+| API route | Method | What |
+| --- | --- | --- |
+| `/api/signup` | POST | Create an account |
+| `/api/login` | POST | Log in, get a token |
+| `/api/profile` | GET / PUT | Read / update the logged-in user |
+| `/api/pickups` | GET / POST / PATCH | List, create, cancel your pickups |
+
+Every input is validated twice: in the browser (`public/auth.js`) for instant feedback, and on the
+server (`api/_lib.js`) because the browser can be bypassed. MongoDB collections: `users`, `pickups`.
+
+Environment variables (Vercel → Settings → Environment Variables): `MONGODB_URI`, `JWT_SECRET`.
 
 ## Run it
 

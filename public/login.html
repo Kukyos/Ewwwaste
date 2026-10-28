@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0e0f11">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="/portal.css">
+  <title>Log in — Cuprum</title>
+</head>
+<body>
+  <header class="top">
+    <a href="/" class="wordmark">Cuprum</a>
+    <nav aria-label="Site">
+      <a href="/#scan">Scanner</a>
+      <a href="/pickup.html">Request a pickup</a>
+      <span id="nav-auth"></span>
+    </nav>
+  </header>
+
+  <main class="narrow">
+    <section class="intro">
+      <p class="eyebrow">E-waste collection portal</p>
+      <h1 id="title">Log in to book pickups.</h1>
+    </section>
+
+    <div class="card">
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" id="tab-login" aria-selected="true">Log in</button>
+        <button type="button" role="tab" id="tab-signup" aria-selected="false">Create account</button>
+      </div>
+
+      <form id="login-form" novalidate>
+        <label class="field">
+          <span>Email</span>
+          <input type="email" name="email" autocomplete="email" required>
+          <small class="field-error" id="email-error"></small>
+        </label>
+        <label class="field">
+          <span>Password</span>
+          <input type="password" name="password" autocomplete="current-password" required>
+          <small class="field-error" id="password-error"></small>
+        </label>
+        <button type="submit" class="btn primary wide">Log in</button>
+        <p class="form-msg" role="status" aria-live="polite"></p>
+      </form>
+
+      <form id="signup-form" novalidate hidden>
+        <label class="field">
+          <span>Full name</span>
+          <input type="text" name="name" autocomplete="name" required>
+          <small class="field-error" id="name-error"></small>
+        </label>
+        <label class="field">
+          <span>Email</span>
+          <input type="email" name="email" autocomplete="email" required>
+          <small class="field-error" id="email-error"></small>
+        </label>
+        <label class="field">
+          <span>Mobile number</span>
+          <input type="tel" name="phone" autocomplete="tel" placeholder="98765 43210" required>
+          <small class="field-error" id="phone-error"></small>
+        </label>
+        <label class="field">
+          <span>Password <em>(8+ characters, a letter and a number)</em></span>
+          <input type="password" name="password" autocomplete="new-password" required>
+          <small class="field-error" id="password-error"></small>
+        </label>
+        <label class="field">
+          <span>Confirm password</span>
+          <input type="password" name="confirm" autocomplete="new-password" required>
+          <small class="field-error" id="confirm-error"></small>
+        </label>
+        <button type="submit" class="btn primary wide">Create account</button>
+        <p class="form-msg" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+  </main>
+
+  <script src="/auth.js"></script>
+  <script>
+    const next = new URLSearchParams(location.search).get('next') || '/profile.html';
+    const goNext = () => location.replace(next.startsWith('/') && !next.startsWith('//') ? next : '/profile.html');
+    if (getToken()) goNext();
+
+    const loginForm = document.getElementById('login-form');
+    const signupForm = document.getElementById('signup-form');
+    const tabs = { login: document.getElementById('tab-login'), signup: document.getElementById('tab-signup') };
+
+    function show(which) {
+      tabs.login.setAttribute('aria-selected', which === 'login');
+      tabs.signup.setAttribute('aria-selected', which === 'signup');
+      loginForm.hidden = which !== 'login';
+      signupForm.hidden = which !== 'signup';
+      document.getElementById('title').textContent = which === 'login' ? 'Log in to book pickups.' : 'Create your account.';
+    }
+    tabs.login.addEventListener('click', () => show('login'));
+    tabs.signup.addEventListener('click', () => show('signup'));
+
+    async function submit(form, path, body) {
+      const msg = form.querySelector('.form-msg');
+      const button = form.querySelector('button[type=submit]');
+      button.disabled = true;
+      msg.className = 'form-msg';
+      msg.textContent = 'Please wait…';
+      try {
+        const { token } = await api(path, { method: 'POST', body });
+        setToken(token);
+        goNext();
+      } catch (err) {
+        showFieldErrors(form, err.fields);
+        msg.className = 'form-msg bad';
+        msg.textContent = err.message;
+        button.disabled = false;
+      }
+    }
+
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const errors = checkFields(loginForm, ['email']);
+      if (!loginForm.elements.password.value) errors.password = 'This field is required.';
+      showFieldErrors(loginForm, errors);
+      if (Object.keys(errors).length) return;
+      const f = loginForm.elements;
+      submit(loginForm, 'login', { email: f.email.value.trim(), password: f.password.value });
+    });
+
+    signupForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const f = signupForm.elements;
+      const errors = checkFields(signupForm, ['name', 'email', 'phone', 'password']);
+      if (f.confirm.value !== f.password.value) errors.confirm = 'Passwords do not match.';
+      showFieldErrors(signupForm, errors);
+      if (Object.keys(errors).length) return;
+      submit(signupForm, 'signup', {
+        name: f.name.value.trim(), email: f.email.value.trim(), phone: f.phone.value.trim(), password: f.password.value,
+      });
+    });
+  </script>
+</body>
+</html>

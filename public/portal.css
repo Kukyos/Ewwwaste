@@ -1,4 +1,4 @@
-/* Collection portal. Same palette as the main site (src/styles.css), plain CSS. */
+/* Collection portal pages (login, profile, pickup). Same palette as the main site (src/styles.css), plain CSS. */
 :root {
   --ink-0: #0e0f11;
   --ink-1: #15171a;
@@ -63,8 +63,27 @@ input[type="text"], input[type="tel"], input[type="email"], input[type="date"], 
 }
 textarea { resize: vertical; }
 input:focus, select:focus, textarea:focus { border-color: var(--cu); outline: none; }
-/* Only flag invalid fields after the user tried to submit */
-.tried :invalid:not(fieldset) { border-color: var(--hazard); }
+[aria-invalid="true"] { border-color: var(--hazard) !important; }
+.field-error { color: var(--hazard); font-size: 13.5px; min-height: 0; }
+.field-error:empty { display: none; }
+
+/* Login / signup */
+main.narrow { max-width: 480px; }
+.tabs { display: flex; gap: 4px; padding: 4px; background: var(--ink-2); border-radius: 999px; margin-bottom: 8px; }
+.tabs button { flex: 1; padding: 8px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; font-weight: 600; color: var(--paper-2); }
+.tabs button[aria-selected="true"] { background: var(--cu); color: var(--ink-0); }
+.linkish { background: none; border: 0; padding: 0; cursor: pointer; color: var(--paper-2); font-size: inherit; }
+.linkish:hover { color: var(--paper); }
+#nav-auth { display: flex; gap: 24px; }
+
+/* Profile */
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 0 0 24px; }
+.stats div { background: var(--ink-1); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; }
+.stats dt { color: var(--paper-2); font-size: 14px; }
+.stats dd { margin: 4px 0 0; font-family: var(--mono); font-size: 32px; color: var(--cu-hi); }
+.head-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; }
+.head-row h2 { margin: 0; }
+input:disabled { opacity: 0.6; }
 
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
@@ -94,7 +113,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--cu); outline: no
 .btn.primary { background: var(--cu); border-color: var(--cu); color: var(--ink-0); }
 .btn.primary:hover { background: var(--cu-hi); border-color: var(--cu-hi); }
 .btn.wide { width: 100%; padding: 14px; font-size: 16px; margin-top: 8px; }
-.btn.small { padding: 4px 12px; font-size: 13px; }
+.btn.small { padding: 4px 12px; font-size: 13px; justify-self: start; margin-top: 6px; }
 
 .hint { color: var(--paper-3); font-size: 14px; }
 .hint.bad, .error { color: var(--hazard); font-size: 14px; margin-top: 8px; }
@@ -127,7 +146,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--cu); outline: no
 @media (max-width: 560px) {
   .top { gap: 16px; }
   .top nav { gap: 14px; font-size: 13.5px; }
-  .top nav a[href="#requests"] { display: none; }
+  .top nav a[href="/#scan"] { display: none; }
+  #nav-auth { gap: 14px; }
+  .stats { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .stats div { padding: 12px; }
+  .stats dd { font-size: 24px; }
   .row { grid-template-columns: 1fr; }
   .card { padding: 18px; }
 }

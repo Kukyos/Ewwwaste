@@ -9,16 +9,18 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-  <link rel="stylesheet" href="/pickup.css">
+  <link rel="stylesheet" href="/portal.css">
   <title>Request a Pickup — Cuprum</title>
 </head>
 <body>
+  <script src="/auth.js"></script>
+  <script>requireLogin();</script>
   <header class="top">
     <a href="/" class="wordmark">Cuprum</a>
     <nav aria-label="Site">
       <a href="/#scan">Scanner</a>
       <a href="/pickup.html" aria-current="page">Request a pickup</a>
-      <a href="#requests">My requests</a>
+      <span id="nav-auth"></span>
     </nav>
   </header>
 
@@ -48,14 +50,15 @@
             <label><input type="checkbox" name="items" value="lamp"> Lamps / bulbs</label>
             <label><input type="checkbox" name="items" value="peripheral"> Other small electronics</label>
           </div>
-          <p class="error" id="items-error" hidden>Pick at least one item.</p>
+          <small class="field-error" id="items-error"></small>
           <label class="field">
             <span>Roughly how much?</span>
             <select name="size" required>
-              <option value="A small bag (under 5 kg)">A small bag (under 5 kg)</option>
-              <option value="A box (5–20 kg)">A box (5–20 kg)</option>
-              <option value="Large items (over 20 kg)">Large items (over 20 kg)</option>
+              <option value="small">A small bag (under 5 kg)</option>
+              <option value="box">A box (5–20 kg)</option>
+              <option value="large">Large items (over 20 kg)</option>
             </select>
+            <small class="field-error" id="size-error"></small>
           </label>
         </fieldset>
 
@@ -71,12 +74,20 @@
           <iframe id="map" class="map" title="Map of your pickup location" hidden></iframe>
           <label class="field">
             <span>Pickup address</span>
-            <textarea name="address" rows="3" required minlength="10" placeholder="House no., street, area, city, PIN code"></textarea>
+            <textarea name="address" rows="3" required placeholder="House no., street, area, city"></textarea>
+            <small class="field-error" id="address-error"></small>
           </label>
-          <label class="field">
-            <span>Landmark <em>(optional)</em></span>
-            <input type="text" name="landmark" placeholder="Near the post office">
-          </label>
+          <div class="row">
+            <label class="field">
+              <span>PIN code</span>
+              <input type="text" name="pincode" inputmode="numeric" maxlength="6" required>
+              <small class="field-error" id="pincode-error"></small>
+            </label>
+            <label class="field">
+              <span>Landmark <em>(optional)</em></span>
+              <input type="text" name="landmark" maxlength="100" placeholder="Near the post office">
+            </label>
+          </div>
           <input type="hidden" name="lat">
           <input type="hidden" name="lon">
         </fieldset>
@@ -87,42 +98,36 @@
             <label class="field">
               <span>Date</span>
               <input type="date" name="date" id="date" required>
+              <small class="field-error" id="date-error"></small>
             </label>
             <label class="field">
               <span>Time slot</span>
               <select name="slot" required>
-                <option value="9 am – 12 pm">9 am – 12 pm</option>
-                <option value="12 pm – 3 pm">12 pm – 3 pm</option>
-                <option value="3 pm – 6 pm">3 pm – 6 pm</option>
+                <option value="9-12">9 am – 12 pm</option>
+                <option value="12-3">12 pm – 3 pm</option>
+                <option value="3-6">3 pm – 6 pm</option>
               </select>
+              <small class="field-error" id="slot-error"></small>
             </label>
           </div>
         </fieldset>
 
         <fieldset>
-          <legend>4. Your details</legend>
+          <legend>4. Contact</legend>
           <label class="field">
-            <span>Full name</span>
-            <input type="text" name="name" required autocomplete="name">
+            <span>Mobile number the collector should call</span>
+            <input type="tel" name="phone" required>
+            <small class="field-error" id="phone-error"></small>
           </label>
-          <div class="row">
-            <label class="field">
-              <span>Phone</span>
-              <input type="tel" name="phone" required pattern="[0-9+\s\-]{10,15}" autocomplete="tel" placeholder="98765 43210">
-            </label>
-            <label class="field">
-              <span>Email <em>(optional)</em></span>
-              <input type="email" name="email" autocomplete="email">
-            </label>
-          </div>
           <label class="field">
             <span>Notes for the driver <em>(optional)</em></span>
-            <textarea name="notes" rows="2" placeholder="Gate code, floor, which items are heavy…"></textarea>
+            <textarea name="notes" rows="2" maxlength="300" placeholder="Gate code, floor, which items are heavy…"></textarea>
           </label>
           <label class="check">
             <input type="checkbox" name="wiped" required>
             I have removed or wiped personal data from phones, laptops and drives.
           </label>
+          <small class="field-error" id="wiped-error"></small>
         </fieldset>
 
         <button type="submit" class="btn primary wide">Book pickup</button>
@@ -132,8 +137,8 @@
       <aside class="side">
         <section class="card" id="requests">
           <h2>My requests</h2>
-          <p class="hint" id="empty">No pickups booked yet.</p>
-          <ul class="requests" id="request-list"></ul>
+          <p class="hint" id="empty" hidden>No pickups booked yet.</p>
+          <ul class="requests" id="request-list"><li class="hint">Loading…</li></ul>
         </section>
         <section class="card">
           <h2>How it works</h2>
@@ -152,8 +157,9 @@
     </div>
   </main>
 
-  <footer class="foot">Cuprum e-waste collection portal · Requests are saved in this browser only.</footer>
+  <footer class="foot">Cuprum e-waste collection portal</footer>
 
+  <script src="/pickups-list.js"></script>
   <script src="/pickup.js"></script>
 </body>
 </html>
