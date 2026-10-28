@@ -36,8 +36,8 @@ api('profile').then(({ user }) => {
 // ---------- Location ----------
 function showMap(lat, lon) {
   const d = 0.004; // about 400 m around the point
+  map.hidden = false; // show first: a hidden iframe has zero size and the map only draws one tile
   map.src = `https://www.openstreetmap.org/export/embed.html?bbox=${lon - d},${lat - d},${lon + d},${lat + d}&layer=mapnik&marker=${lat},${lon}`;
-  map.hidden = false;
 }
 
 locateBtn.addEventListener('click', () => {
