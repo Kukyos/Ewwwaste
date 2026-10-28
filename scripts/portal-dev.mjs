@@ -3,6 +3,10 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
+import dns from 'node:dns';
+
+// Some home routers can't answer the SRV lookup that mongodb+srv:// needs; use public DNS locally.
+dns.setServers(['8.8.8.8', '1.1.1.1']);
 
 const PUBLIC = join(import.meta.dirname, '..', 'public');
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.jpg': 'image/jpeg' };

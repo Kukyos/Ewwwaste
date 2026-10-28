@@ -8,7 +8,10 @@ const SECRET = process.env.JWT_SECRET;
 // Reuse one connection across requests while the serverless function stays warm.
 let clientPromise;
 export async function db() {
-  clientPromise ??= new MongoClient(process.env.MONGODB_URI).connect();
+  clientPromise ??= new MongoClient(process.env.MONGODB_URI).connect().catch((err) => {
+    clientPromise = null; // let the next request try again
+    throw err;
+  });
   return (await clientPromise).db('ewaste');
 }
 
