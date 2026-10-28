@@ -33,6 +33,15 @@ server (`api/_lib.js`) because the browser can be bypassed. MongoDB collections:
 
 Environment variables (Vercel → Settings → Environment Variables): `MONGODB_URI`, `JWT_SECRET`.
 
+### Run the whole site locally (Node 22+)
+
+```
+npm install
+# create .env with:  MONGODB_URI="mongodb+srv://..."   JWT_SECRET="any long random string"
+npm run build      # once, builds the home page
+npm run portal     # http://localhost:3000  (backend on /api, same MongoDB Atlas database)
+```
+
 ## Run it
 
 ```
