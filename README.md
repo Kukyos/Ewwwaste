@@ -27,6 +27,10 @@ serverless functions), and MongoDB Atlas for storage.
 | `/api/login` | POST | Log in, get a token |
 | `/api/profile` | GET / PUT | Read / update the logged-in user |
 | `/api/pickups` | GET / POST / PATCH | List, create, cancel your pickups |
+| `/api/admin` | GET / PATCH | Admins only: every pickup with its customer, totals; mark collected / cancel / reopen |
+
+`/admin.html` is the collection team's page. Admins are users with `role: "admin"`; make one with
+`node --env-file=.env scripts/make-admin.mjs <email> <password> "Full Name"` (sign-up never creates admins).
 
 Every input is validated twice: in the browser (`public/auth.js`) for instant feedback, and on the
 server (`api/_lib.js`) because the browser can be bypassed. MongoDB collections: `users`, `pickups`.

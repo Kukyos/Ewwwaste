@@ -107,8 +107,9 @@
       msg.className = 'form-msg';
       msg.textContent = 'Please wait…';
       try {
-        const { token } = await api(path, { method: 'POST', body });
-        setToken(token);
+        const { token, user } = await api(path, { method: 'POST', body });
+        setToken(token, user.role);
+        if (user.role === 'admin' && !new URLSearchParams(location.search).has('next')) return location.replace('/admin.html');
         goNext();
       } catch (err) {
         showFieldErrors(form, err.fields);

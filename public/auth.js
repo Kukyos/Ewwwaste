@@ -5,8 +5,20 @@ const TOKEN_KEY = 'ewaste-token';
 function getToken() {
   try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
 }
-function setToken(token) {
-  try { token ? localStorage.setItem(TOKEN_KEY, token) : localStorage.removeItem(TOKEN_KEY); } catch {}
+function setToken(token, role) {
+  try {
+    if (token) {
+      localStorage.setItem(TOKEN_KEY, token);
+      localStorage.setItem('ewaste-role', role || 'user');
+    } else {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem('ewaste-role');
+    }
+  } catch {}
+}
+// Only decides whether to show the Admin link; the server checks the real role on every admin request.
+function isAdmin() {
+  try { return localStorage.getItem('ewaste-role') === 'admin'; } catch { return false; }
 }
 
 // fetch() wrapper: sends JSON with the token, throws an Error carrying the server's message and field errors.
@@ -81,7 +93,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const slot = document.getElementById('nav-auth');
   if (!slot) return;
   if (getToken()) {
-    slot.innerHTML = '<a href="/profile.html">My profile</a> <button type="button" class="linkish" id="logout">Log out</button>';
+    slot.innerHTML = (isAdmin() ? '<a href="/admin.html">Admin</a> ' : '') +
+      '<a href="/profile.html">My profile</a> <button type="button" class="linkish" id="logout">Log out</button>';
     document.getElementById('logout').addEventListener('click', logout);
   } else {
     slot.innerHTML = '<a href="/login.html">Log in</a>';

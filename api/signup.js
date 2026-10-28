@@ -21,6 +21,7 @@ export default async function handler(req, res) {
     passwordHash: await bcrypt.hash(req.body.password, 10),
     address: '',
     pincode: '',
+    role: 'user', // admins are promoted by hand in the database, never through this route
     createdAt: new Date(),
   };
   const { insertedId } = await users.insertOne(user);

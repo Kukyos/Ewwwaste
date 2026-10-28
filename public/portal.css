@@ -85,6 +85,20 @@ main.narrow { max-width: 480px; }
 .head-row h2 { margin: 0; }
 input:disabled { opacity: 0.6; }
 
+/* Admin */
+main.wide { max-width: 1400px; }
+.stats.four { grid-template-columns: repeat(4, 1fr); }
+label.inline { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--paper-2); }
+label.inline select { width: auto; }
+.table-wrap { overflow-x: auto; }
+.admin-table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 900px; }
+.admin-table th { text-align: left; font-weight: 600; color: var(--paper-2); padding: 10px 12px; border-bottom: 1px solid var(--line-2); }
+.admin-table td { padding: 12px; border-bottom: 1px solid var(--line); vertical-align: top; white-space: pre-line; }
+.admin-table td.id { font-family: var(--mono); color: var(--cu-hi); font-size: 13px; }
+.admin-table .meta { color: var(--paper-2); }
+.admin-table td .btn.small { display: flex; width: 100%; margin: 0 0 6px; }
+.admin-table tbody tr:hover { background: var(--ink-2); }
+
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
 /* Item checkboxes as toggle chips */
@@ -142,6 +156,7 @@ input:disabled { opacity: 0.6; }
 @media (max-width: 860px) {
   .layout { grid-template-columns: 1fr; }
   .side { position: static; }
+  .stats.four { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 560px) {
   .top { gap: 16px; }

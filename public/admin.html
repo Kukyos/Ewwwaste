@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0e0f11">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="/portal.css">
+  <title>Admin — Cuprum</title>
+</head>
+<body>
+  <script src="/auth.js"></script>
+  <script>requireLogin();</script>
+  <header class="top">
+    <a href="/" class="wordmark">Cuprum</a>
+    <nav aria-label="Site">
+      <a href="/pickup.html">Request a pickup</a>
+      <span id="nav-auth"></span>
+    </nav>
+  </header>
+
+  <main class="wide">
+    <section class="intro">
+      <p class="eyebrow">Admin · collection team</p>
+      <h1>Pickup requests</h1>
+    </section>
+
+    <dl class="stats four">
+      <div><dt>Scheduled</dt><dd id="t-scheduled">–</dd></div>
+      <div><dt>Completed</dt><dd id="t-completed">–</dd></div>
+      <div><dt>Cancelled</dt><dd id="t-cancelled">–</dd></div>
+      <div><dt>Registered users</dt><dd id="t-users">–</dd></div>
+    </dl>
+
+    <section class="card">
+      <div class="head-row">
+        <h2>All requests</h2>
+        <label class="inline">
+          <span>Show</span>
+          <select id="filter">
+            <option value="">All</option>
+            <option value="scheduled" selected>Scheduled</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </label>
+      </div>
+      <p class="form-msg" id="msg" role="status" aria-live="polite"></p>
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr><th>Request</th><th>Pickup on</th><th>Customer</th><th>Items</th><th>Address</th><th>Status</th><th>Action</th></tr>
+          </thead>
+          <tbody id="rows"><tr><td colspan="7" class="hint">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">Cuprum e-waste collection portal · admin</footer>
+
+  <script src="/pickups-list.js"></script>
+  <script>
+    const rows = document.getElementById('rows');
+    const filter = document.getElementById('filter');
+    const msg = document.getElementById('msg');
+
+    function td(text, className) {
+      const cell = el('td', className, text);
+      return cell;
+    }
+
+    async function load() {
+      let data;
+      try {
+        data = await api(`admin?status=${filter.value}`);
+      } catch (err) {
+        rows.replaceChildren(el('tr', '', ''));
+        rows.firstChild.append(td(err.message, 'hint bad'));
+        rows.firstChild.firstChild.colSpan = 7;
+        return;
+      }
+      for (const k of ['scheduled', 'completed', 'cancelled', 'users']) document.getElementById(`t-${k}`).textContent = data.totals[k];
+
+      if (!data.pickups.length) {
+        const tr = el('tr');
+        const cell = td('No requests here.', 'hint');
+        cell.colSpan = 7;
+        tr.append(cell);
+        return rows.replaceChildren(tr);
+      }
+
+      rows.replaceChildren(...data.pickups.map((p) => {
+        const tr = el('tr');
+        const c = p.customer || {};
+
+        const customer = td('');
+        customer.append(el('div', '', c.name || '(deleted user)'), el('div', 'meta', p.phone), el('div', 'meta', c.email || ''));
+
+        const where = td('');
+        where.append(el('div', '', `${p.address} – ${p.pincode}`));
+        if (p.landmark) where.append(el('div', 'meta', `Landmark: ${p.landmark}`));
+        if (p.location) {
+          const a = el('a', '', 'Open in maps');
+          a.href = `https://www.google.com/maps?q=${p.location.lat},${p.location.lon}`;
+          a.target = '_blank';
+          a.rel = 'noopener';
+          where.append(a);
+        }
+        if (p.notes) where.append(el('div', 'meta', `Note: ${p.notes}`));
+
+        const status = td('');
+        status.append(el('span', `status ${p.status}`, p.status));
+
+        const action = td('');
+        const button = (label, next, primary) => {
+          const b = el('button', primary ? 'btn small primary' : 'btn small', label);
+          b.type = 'button';
+          b.addEventListener('click', async () => {
+            b.disabled = true;
+            try {
+              await api(`admin?id=${p._id}`, { method: 'PATCH', body: { status: next } });
+              msg.className = 'form-msg ok';
+              msg.textContent = `${p.code} marked ${next}.`;
+              load();
+            } catch (err) {
+              msg.className = 'form-msg bad';
+              msg.textContent = err.message;
+              b.disabled = false;
+            }
+          });
+          return b;
+        };
+        if (p.status === 'scheduled') action.append(button('Mark collected', 'completed', true), button('Cancel', 'cancelled'));
+        else action.append(button('Reopen', 'scheduled'));
+
+        tr.append(
+          td(p.code, 'id'),
+          td(`${prettyDate(p.date)}\n${SLOT_NAMES[p.slot] || p.slot}`),
+          customer,
+          td(`${p.items.map((i) => ITEM_NAMES[i] || i).join(', ')}\n${SIZE_NAMES[p.size] || p.size}`),
+          where, status, action,
+        );
+        return tr;
+      }));
+    }
+
+    filter.addEventListener('change', load);
+    load();
+  </script>
+</body>
+</html>
