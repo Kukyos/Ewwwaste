@@ -9,7 +9,8 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "check": "node src/sim/model.check.ts",
-    "embed": "node scripts/embed.mjs"
+    "embed": "node scripts/embed.mjs",
+    "portal": "node --env-file-if-exists=.env scripts/portal-dev.mjs"
   },
   "dependencies": {
     "@fontsource-variable/archivo": "^5.3.0",

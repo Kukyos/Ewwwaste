@@ -4,3 +4,4 @@ eval/images
 *.tsbuildinfo
 .vercel
 private
+.env
